@@ -19,6 +19,7 @@ SPARK_CONF_DIR=$SPARK_HOME/conf
 #
 # ECB: I´m only using LOG_ANALYTICS_WORKSPACE_ID and LOG_ANALYTICS_WORKSPACE_KEY
 #      Adding CLUSTER_ALLTAGS_ENVIRONMENT_VARIABLE 
+#      Adding USE_SPARK_MONITORING_DEFAULT_VALUES
 #
 tee -a "$SPARK_CONF_DIR/spark-env.sh" << EOF
 export DB_CLUSTER_ID=$DB_CLUSTER_ID
@@ -32,31 +33,50 @@ export AZ_RSRC_PROV_NAMESPACE=${AZ_RSRC_PROV_NAMESPACE}
 export AZ_RSRC_TYPE=${AZ_RSRC_TYPE}
 export AZ_RSRC_NAME=${AZ_RSRC_NAME}
 
-#export LA_SPARKMETRIC_REGEX="${LA_SPARKMETRIC_REGEX}"
-if [[ -z "${LA_SPARKMETRIC_REGEX}" ]]; then
-  export LA_SPARKMETRIC_REGEX="app.*\.ExternalShuffle\.shuffle-client\.usedDirectMemory|app.*\.jvm\.total\.used|app.*\.jvm\.pools\.PS-Survivor-Space\.used|app.*\.jvm\.pools\.Code-Cache\.used|app.*\.jvm\.pools\.Metaspace\.used|app.*\.executor\.cpuTime|app.*\.executor\.runTime"
-else  
-  export LA_SPARKMETRIC_REGEX="${LA_SPARKMETRIC_REGEX}"
-fi
+# Activate default parameters for spark-monitoring (true/false)
+# minimum
 
-#export LA_SPARKLISTENEREVENT_REGEX="${LA_SPARKLISTENEREVENT_REGEX}"
-if [[ -z "${LA_SPARKLISTENEREVENT_REGEX}" ]]; then
-  export LA_SPARKLISTENEREVENT_REGEX="SparkListenerTaskEnd|SparkListenerExecutorAdded|SparkListenerBlockManagerAdded|SparkListenerJobStart|SparkListenerStageSubmitted|SparkListenerTaskGettingResult|SparkListenerTaskStart"
-else  
-  export LA_SPARKLISTENEREVENT_REGEX="${LA_SPARKLISTENEREVENT_REGEX}"
-fi
+export SPARK_MONITORING_DEFAULT_VALUES=${SPARK_MONITORING_DEFAULT_VALUES}
 
-#export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}"
-if [[ -z "${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}" ]]; then
-  #export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Registering worker.*"
-  export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Granted executor ID.*"
-else  
-  export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}"
-fi
+case "$SPARK_MONITORING_DEFAULT_VALUES" in
+   "default") 
+    export LA_SPARKMETRIC_REGEX="app.*\.ExternalShuffle\.shuffle-client\.usedDirectMemory|app.*\.jvm\.total\.used|app.*\.jvm\.pools\.PS-Survivor-Space\.used|app.*\.jvm\.pools\.Code-Cache\.used|app.*\.jvm\.pools\.Metaspace\.used|app.*\.executor\.cpuTime|app.*\.executor\.runTime"
+    export LA_SPARKLISTENEREVENT_REGEX="SparkListenerTaskEnd|SparkListenerExecutorAdded|SparkListenerBlockManagerAdded|SparkListenerJobStart|SparkListenerStageSubmitted|SparkListenerTaskGettingResult|SparkListenerTaskStart"
+    export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Registering block manager.*"
+   ;;
+   "minimum") 
+    export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Registering block manager.*"
+    export LA_SPARKMETRIC_REGEX="XXXXnomecapturesXXXX"
+    export LA_SPARKLISTENEREVENT_REGEX="XXXXnomecapturesXXXX"
+    #export LA_SPARKLOGGINGEVENT_NAME_REGEX="XXXXnomecapturesXXXX"
+   ;;  
+   *)
+    #export LA_SPARKMETRIC_REGEX="${LA_SPARKMETRIC_REGEX}"
+    if [[ -z "${LA_SPARKMETRIC_REGEX}" ]]; then
+      export LA_SPARKMETRIC_REGEX="app.*\.ExternalShuffle\.shuffle-client\.usedDirectMemory|app.*\.jvm\.total\.used|app.*\.jvm\.pools\.PS-Survivor-Space\.used|app.*\.jvm\.pools\.Code-Cache\.used|app.*\.jvm\.pools\.Metaspace\.used|app.*\.executor\.cpuTime|app.*\.executor\.runTime"
+    else  
+      export LA_SPARKMETRIC_REGEX="${LA_SPARKMETRIC_REGEX}"
+    fi
 
-# this is optional since we will be using LA_SPARKLOGGINGEVENT_MESSAGE_REGEX
-export LA_SPARKLOGGINGEVENT_NAME_REGEX="${LA_SPARKLOGGINGEVENT_NAME_REGEX}"
+    #export LA_SPARKLISTENEREVENT_REGEX="${LA_SPARKLISTENEREVENT_REGEX}"
+    if [[ -z "${LA_SPARKLISTENEREVENT_REGEX}" ]]; then
+      export LA_SPARKLISTENEREVENT_REGEX="SparkListenerTaskEnd|SparkListenerExecutorAdded|SparkListenerBlockManagerAdded|SparkListenerJobStart|SparkListenerStageSubmitted|SparkListenerTaskGettingResult|SparkListenerTaskStart"
+    else  
+      export LA_SPARKLISTENEREVENT_REGEX="${LA_SPARKLISTENEREVENT_REGEX}"
+    fi
 
+    #export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}"
+    if [[ -z "${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}" ]]; then
+      #export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Registering worker.*"
+      #export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Granted executor ID.*"
+      export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="Registering block manager.*"
+    else  
+      export LA_SPARKLOGGINGEVENT_MESSAGE_REGEX="${LA_SPARKLOGGINGEVENT_MESSAGE_REGEX}"
+    fi
+
+    # this is optional since we will be using LA_SPARKLOGGINGEVENT_MESSAGE_REGEX
+    export LA_SPARKLOGGINGEVENT_NAME_REGEX="${LA_SPARKLOGGINGEVENT_NAME_REGEX}"
+esac
 
 # Note: All REGEX filters below are implemented with java.lang.String.matches(...).  This implementation essentially appends ^...$ around
 # the regular expression, so the entire string must match the regex.  If you need to allow for other values you should include .* before and/or

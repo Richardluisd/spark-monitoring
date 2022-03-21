@@ -109,3 +109,20 @@ The example below will only log events where the message ends with the string `S
 You should be mindful of using complicated Regular Expressions as they have to be evaluated for every logged event or metric.  Simple whole-string matches should be relatively performent, or `pattern.*` expressions that will match the beginning of strings.
 
 > Warning: Filtering on the logging event message with `LA_SPARKLOGGINGEVENT_MESSAGE_REGEX` should be considered experimental. Some components generate very large message strings and processing the `.matches` operation on these strings could cause a significant burden on the cluster nodes.
+
+## SPARK_MONITORING_DEFAULT_VALUES
+
+There is included two optional minimum preconfigured moniotoring values in this solution, that can be activated through this environment variable.
+
+- "default"
+  - This is useful to create a set of REGEX filters that captures a minimum viable information required to analyze CPU and Memory.
+- "minimum"
+  - This will only captures the event _"Registering block manager.*"_ and it´s useful to know cluster, machines and tags.
+
+> NOTE: minimum is good if you want to get performance data from OMS agent and still be able to get cluster/machine tags
+
+If you want to use the SPARK_MONITORING_DEFAULT_VALUES, you only need to set up this variable using the environment variable
+
+```bash
+SPARK_MONITORING_DEFAULT_VALUES=minimum
+```
